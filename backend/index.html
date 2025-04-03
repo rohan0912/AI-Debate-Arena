@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Debate Arena</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f7fa;
+        }
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+            margin-bottom: 30px;
+        }
+        .container {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .input-section {
+            margin-bottom: 20px;
+        }
+        textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            resize: vertical;
+            min-height: 100px;
+            font-family: inherit;
+            font-size: 16px;
+        }
+        button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            display: block;
+            margin: 20px auto;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #2980b9;
+        }
+        button:disabled {
+            background-color: #95a5a6;
+            cursor: not-allowed;
+        }
+        .model-response {
+            background-color: #f8f9fa;
+            border-left: 4px solid #3498db;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 0 4px 4px 0;
+        }
+        .model-name {
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 8px;
+        }
+        .loading {
+            text-align: center;
+            padding: 20px;
+            font-style: italic;
+            color: #7f8c8d;
+        }
+        .error {
+            background-color: #ffecec;
+            color: #e74c3c;
+            padding: 10px;
+            border-radius: 4px;
+            margin-bottom: 15px;
+        }
+    </style>
+</head>
+<body>
+    <h1>AI Debate Arena: 4-Model Edition</h1>
+    
+    <div class="container">
+        <div class="input-section">
+            <h2>Enter a Topic for Debate</h2>
+            <textarea id="topic-input" placeholder="Enter a debate topic here... (e.g., 'Should artificial intelligence be regulated?')"></textarea>
+            <button id="start-debate">Start Debate</button>
+        </div>
+        
+        <div id="error-message" class="error" style="display: none;"></div>
+        
+        <div id="loading" class="loading" style="display: none;">
+            <p>The AI models are debating... This may take a minute or two.</p>
+        </div>
+        
+        <div id="debate-results"></div>
+    </div>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const topicInput = document.getElementById('topic-input');
+            const startDebateButton = document.getElementById('start-debate');
+            const debateResults = document.getElementById('debate-results');
+            const loadingIndicator = document.getElementById('loading');
+            const errorMessage = document.getElementById('error-message');
+            
+            startDebateButton.addEventListener('click', async function() {
+                const topic = topicInput.value.trim();
+                
+                if (!topic) {
+                    errorMessage.textContent = 'Please enter a debate topic.';
+                    errorMessage.style.display = 'block';
+                    return;
+                }
+                
+                // Clear previous results and errors
+                debateResults.innerHTML = '';
+                errorMessage.style.display = 'none';
+                
+                // Show loading indicator
+                loadingIndicator.style.display = 'block';
+                startDebateButton.disabled = true;
+                
+                try {
+                    // Make API call to backend
+                    const response = await fetch('http://localhost:3000/api/debate', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ topic })
+                    });
+                    
+                    if (!response.ok) {
+                        throw new Error('Failed to get debate responses');
+                    }
+                    
+                    const data = await response.json();
+                    
+                    // Display results
+                    const resultsHTML = `
+                        <h2>Debate on: ${data.topic}</h2>
+                        ${data.responses.map(response => `
+                            <div class="model-response">
+                                <div class="model-name">${response.model}</div>
+                                <div>${response.response.replace(/\n/g, '<br>')}</div>
+                            </div>
+                        `).join('')}
+                    `;
+                    
+                    debateResults.innerHTML = resultsHTML;
+                    
+                } catch (error) {
+                    console.error('Error:', error);
+                    errorMessage.textContent = 'Error: ' + error.message;
+                    errorMessage.style.display = 'block';
+                } finally {
+                    // Hide loading indicator
+                    loadingIndicator.style.display = 'none';
+                    startDebateButton.disabled = false;
+                }
+            });
+        });
+    </script>
+</body>
+</html>
